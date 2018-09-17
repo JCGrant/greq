@@ -52,7 +52,7 @@ func TestRequest(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		method           func(string) *Requester
+		method           func(string, ...Configurer) (*Response, error)
 		url              string
 		body             interface{}
 		response         interface{}
@@ -85,7 +85,11 @@ func TestRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.method(test.url).Body(test.body).JSON(test.response).Run()
+			res, err := test.method(test.url, Body(test.body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = res.JSON(test.response)
 			if err != nil {
 				t.Fatal(err)
 			}
