@@ -3,6 +3,7 @@ package requests
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -99,4 +100,13 @@ func TestRequest(t *testing.T) {
 		})
 	}
 
+}
+
+func ExampleRequest() {
+	res, err := Post("people-and-books.com", Body(Command{ObjectToFetch: book}))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	var book Book
+	res.JSON(&book)
 }
