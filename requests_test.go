@@ -30,6 +30,10 @@ type Book struct {
 }
 
 var mockServerHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("Auth") == "secret-key" {
+		fmt.Fprintln(w, `{"name": "Admin", "hairColor": "Gold"}`)
+		return
+	}
 	var command Command
 	err := json.NewDecoder(r.Body).Decode(&command)
 	if err != nil {
@@ -57,6 +61,7 @@ func TestRequest(t *testing.T) {
 		url              string
 		body             interface{}
 		bodyBytes        []byte
+		headers          map[string]string
 		response         interface{}
 		expectedResponse interface{}
 	}{
@@ -68,6 +73,19 @@ func TestRequest(t *testing.T) {
 			expectedResponse: &Person{
 				Name:      "James",
 				HairColor: "Brown",
+			},
+		},
+		{
+			name:   "get with headers",
+			method: Get,
+			url:    testServer.URL,
+			headers: map[string]string{
+				"Auth": "secret-key",
+			},
+			response: &Person{},
+			expectedResponse: &Person{
+				Name:      "Admin",
+				HairColor: "Gold",
 			},
 		},
 		{
@@ -98,7 +116,12 @@ func TestRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res, err := test.method(test.url, Body(test.body), BodyBytes(test.bodyBytes))
+			res, err := test.method(
+				test.url,
+				Body(test.body),
+				BodyBytes(test.bodyBytes),
+				Headers(test.headers),
+			)
 			if err != nil {
 				t.Fatal(err)
 			}

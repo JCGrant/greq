@@ -12,6 +12,7 @@ import (
 type config struct {
 	body      interface{}
 	bodyBytes []byte
+	headers   map[string]string
 }
 
 // Configurer will modify a Requests configuration.
@@ -28,6 +29,13 @@ func Body(body interface{}) Configurer {
 func BodyBytes(bytes []byte) Configurer {
 	return func(config *config) {
 		config.bodyBytes = bytes
+	}
+}
+
+// Headers is a Configurer which will set headers on the request.
+func Headers(headers map[string]string) Configurer {
+	return func(config *config) {
+		config.headers = headers
 	}
 }
 
@@ -56,6 +64,10 @@ func Request(method, url string, configurers ...Configurer) (*Response, error) {
 	req, err := http.NewRequest(method, url, buf)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request failed")
+	}
+
+	for key, value := range config.headers {
+		req.Header.Add(key, value)
 	}
 
 	client := &http.Client{}
