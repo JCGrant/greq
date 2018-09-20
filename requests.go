@@ -10,7 +10,8 @@ import (
 )
 
 type config struct {
-	body interface{}
+	body      interface{}
+	bodyBytes []byte
 }
 
 // Configurer will modify a Requests configuration.
@@ -20,6 +21,13 @@ type Configurer func(*config)
 func Body(body interface{}) Configurer {
 	return func(config *config) {
 		config.body = body
+	}
+}
+
+// BodyBytes is a Configurer which will set a body on the request. It has priority over Body.
+func BodyBytes(bytes []byte) Configurer {
+	return func(config *config) {
+		config.bodyBytes = bytes
 	}
 }
 
@@ -35,13 +43,17 @@ func Request(method, url string, configurers ...Configurer) (*Response, error) {
 		configurer(&config)
 	}
 
-	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(config.body)
-	if err != nil {
-		return nil, errors.Wrap(err, "encoding body failed")
+	buf := &bytes.Buffer{}
+	if config.bodyBytes != nil {
+		buf = bytes.NewBuffer(config.bodyBytes)
+	} else {
+		err := json.NewEncoder(buf).Encode(config.body)
+		if err != nil {
+			return nil, errors.Wrap(err, "encoding body failed")
+		}
 	}
 
-	req, err := http.NewRequest(method, url, &buf)
+	req, err := http.NewRequest(method, url, buf)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request failed")
 	}

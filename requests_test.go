@@ -56,6 +56,7 @@ func TestRequest(t *testing.T) {
 		method           func(string, ...Configurer) (*Response, error)
 		url              string
 		body             interface{}
+		bodyBytes        []byte
 		response         interface{}
 		expectedResponse interface{}
 	}{
@@ -82,11 +83,22 @@ func TestRequest(t *testing.T) {
 				CopiesSold: 42,
 			},
 		},
+		{
+			name:      "post with body bytes",
+			method:    Post,
+			url:       testServer.URL,
+			bodyBytes: []byte(`{"objectToFetch": "book"}`),
+			response:  &Book{},
+			expectedResponse: &Book{
+				Title:      "Hitchhiker's Guide to the Galaxy",
+				CopiesSold: 42,
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			res, err := test.method(test.url, Body(test.body))
+			res, err := test.method(test.url, Body(test.body), BodyBytes(test.bodyBytes))
 			if err != nil {
 				t.Fatal(err)
 			}
